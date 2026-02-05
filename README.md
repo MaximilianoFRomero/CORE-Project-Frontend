@@ -173,44 +173,7 @@ Navega a ```http://localhost:3000```
 ## 📡 Estructura de Rutas
 
 ```
-app/
-├── (auth)/              # Rutas de autenticación
-│   ├── login/           # Login page
-│   └── register/        # Register page
-├── (dashboard)/         # Layout principal con sidebar y header
-│   ├── layout.tsx
-│   ├── page.tsx         # Dashboard principal
-│   ├── projects/        # Gestión de proyectos
-│   │   ├── page.tsx
-│   │   ├── [id]/        # Proyecto específico
-│   │   │   ├── page.tsx
-│   │   │   └── deployment/ # Deployments del proyecto
-│   │   │       └── page.tsx
-│   │   └── create/      # Crear nuevo proyecto
-│   │       └── page.tsx
-│   ├── deployments/     # Historial de deployments
-│   │   ├── page.tsx
-│   │   └── [id]/        # Deployment específico
-│   │       └── page.tsx
-│   ├── settings/        # Configuración de usuario
-│   │   ├── page.tsx
-│   │   └── profile/     # Perfil de usuario
-│   │       └── page.tsx
-│   └── api/             # API routes internas
-│       ├── projects/    # API routes para proyectos
-│       └── deployments/ # API routes para deployments
-├── api/                 # API routes públicas
-├── components/          # Componentes reutilizables
-│   ├── ui/              # Componentes de Shadcn/ui
-│   ├── shared/          # Componentes compartidos
-│   └── features/        # Componentes por feature
-├── lib/                 # Lógica de negocio
-│   ├── api.ts           # Cliente API
-│   ├── auth.ts          # Lógica de autenticación
-│   ├── hooks.ts         # Custom React hooks
-│   └── utils.ts         # Utilidades
-├── public/              # Archivos estáticos
-└── styles/              # Estilos globales
+
 ```
 
 ### Testing
