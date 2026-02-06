@@ -173,7 +173,63 @@ Navega a ```http://localhost:3000```
 ## 📡 Estructura de Rutas
 
 ```
-
+CORE-Project-Frontend/
+├── src/
+│   ├── app/
+│   │   ├── (auth)/
+│   │   │   └── login/
+│   │   │       └── page.tsx
+│   │   ├── (dashboard)/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── deployments/
+│   │   │   │   └── page.tsx
+│   │   │   ├── projects/
+│   │   │   │   └── page.tsx
+│   │   │   └── settings/
+│   │   │       └── page.tsx
+│   │   ├── api/
+│   │   │   └── webhooks/
+│   │   │       └── github/
+│   │   │           └── route.ts
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── ui/
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── skeleton.tsx
+│   │   │   └── sonner.tsx
+│   │   ├── dashboard-nav.tsx
+│   │   ├── metrics-chart.tsx
+│   │   ├── project-form.tsx
+│   │   ├── theme-provider.tsx
+│   │   └── theme-toggle.tsx
+│   ├── contexts/
+│   │   └── auth-context.tsx
+│   ├── hooks/
+│   │   ├── index.ts
+│   │   ├── useProjects.ts
+│   │   └── useDeployments.ts
+│   └── lib/
+│       ├── api-client.ts
+│       ├── utils.ts
+│       └── validations.ts
+├── public/
+│   └── next.svg
+├── .env.example
+├── .gitignore
+├── components.json
+├── next.config.js
+├── package.json
+├── postcss.config.js
+├── tailwind.config.js
+├── tsconfig.json
+└── README.md
 ```
 
 ### Testing
