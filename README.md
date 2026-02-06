@@ -173,44 +173,63 @@ Navega a ```http://localhost:3000```
 ## 📡 Estructura de Rutas
 
 ```
-app/
-├── (auth)/              # Rutas de autenticación
-│   ├── login/           # Login page
-│   └── register/        # Register page
-├── (dashboard)/         # Layout principal con sidebar y header
-│   ├── layout.tsx
-│   ├── page.tsx         # Dashboard principal
-│   ├── projects/        # Gestión de proyectos
-│   │   ├── page.tsx
-│   │   ├── [id]/        # Proyecto específico
-│   │   │   ├── page.tsx
-│   │   │   └── deployment/ # Deployments del proyecto
+CORE-Project-Frontend/
+├── src/
+│   ├── app/
+│   │   ├── (auth)/
+│   │   │   └── login/
 │   │   │       └── page.tsx
-│   │   └── create/      # Crear nuevo proyecto
-│   │       └── page.tsx
-│   ├── deployments/     # Historial de deployments
-│   │   ├── page.tsx
-│   │   └── [id]/        # Deployment específico
-│   │       └── page.tsx
-│   ├── settings/        # Configuración de usuario
-│   │   ├── page.tsx
-│   │   └── profile/     # Perfil de usuario
-│   │       └── page.tsx
-│   └── api/             # API routes internas
-│       ├── projects/    # API routes para proyectos
-│       └── deployments/ # API routes para deployments
-├── api/                 # API routes públicas
-├── components/          # Componentes reutilizables
-│   ├── ui/              # Componentes de Shadcn/ui
-│   ├── shared/          # Componentes compartidos
-│   └── features/        # Componentes por feature
-├── lib/                 # Lógica de negocio
-│   ├── api.ts           # Cliente API
-│   ├── auth.ts          # Lógica de autenticación
-│   ├── hooks.ts         # Custom React hooks
-│   └── utils.ts         # Utilidades
-├── public/              # Archivos estáticos
-└── styles/              # Estilos globales
+│   │   ├── (dashboard)/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── deployments/
+│   │   │   │   └── page.tsx
+│   │   │   ├── projects/
+│   │   │   │   └── page.tsx
+│   │   │   └── settings/
+│   │   │       └── page.tsx
+│   │   ├── api/
+│   │   │   └── webhooks/
+│   │   │       └── github/
+│   │   │           └── route.ts
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── ui/
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── skeleton.tsx
+│   │   │   └── sonner.tsx
+│   │   ├── dashboard-nav.tsx
+│   │   ├── metrics-chart.tsx
+│   │   ├── project-form.tsx
+│   │   ├── theme-provider.tsx
+│   │   └── theme-toggle.tsx
+│   ├── contexts/
+│   │   └── auth-context.tsx
+│   ├── hooks/
+│   │   ├── index.ts
+│   │   ├── useProjects.ts
+│   │   └── useDeployments.ts
+│   └── lib/
+│       ├── api-client.ts
+│       ├── utils.ts
+│       └── validations.ts
+├── public/
+│   └── next.svg
+├── .env.example
+├── .gitignore
+├── components.json
+├── next.config.js
+├── package.json
+├── postcss.config.js
+├── tailwind.config.js
+├── tsconfig.json
+└── README.md
 ```
 
 ### Testing
