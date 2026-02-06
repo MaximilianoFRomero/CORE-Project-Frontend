@@ -1,4 +1,5 @@
 import { jwtDecode } from 'jwt-decode';
+import { CreateAdminUserDto, User , AdminUser} from '@/app/types/index';
 
 interface TokenPayload {
   sub: string;
@@ -259,11 +260,11 @@ export class ApiClient {
     }
   }
 
-  async getCurrentUser() {
+  async getCurrentUser(): Promise<AdminUser | null> {
     if (!this.isAuthenticated()) return null;
     
     try {
-      return await this.get('/users/profile/me');
+      return await this.get<AdminUser>('/users/profile/me');
     } catch {
       return null;
     }
@@ -308,6 +309,18 @@ export class ApiClient {
 
   addErrorInterceptor(interceptor: (error: ApiError) => void): void {
     this.errorInterceptors.push(interceptor);
+  }
+
+  async createAdminUser(data: CreateAdminUserDto): Promise<AdminUser> {
+    return this.post<AdminUser>('/users/admin', data);
+  }
+
+  async getAdminUsers(): Promise<AdminUser[]> {
+    return this.get<AdminUser[]>('/users/role/admin');
+  }
+
+  async getUserStats(): Promise<any> {
+    return this.get<any>('/users/stats/overview');
   }
 }
 

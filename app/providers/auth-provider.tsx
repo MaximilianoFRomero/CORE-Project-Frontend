@@ -2,13 +2,14 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { apiClient } from '@/lib/api-client'
+import { UserRole } from '@/app/types/index';  // ← Importar tipos
 
 interface User {
   id: string
   email: string
   firstName: string
   lastName: string
-  role: string
+  role: UserRole
   avatarUrl?: string
 }
 
@@ -21,13 +22,27 @@ interface AuthContextType {
   isAuthenticated: boolean
   getUserRole: () => string | null
   resetPassword: (email: string) => Promise<void>
+  isSuperAdmin: boolean;
+  isAdmin: boolean;
+}
+
+interface CreateAdminUserDto {
+  email: string;
+  firstName: string;
+  lastName: string;
+  password?: string;
+  generatePassword?: boolean;
+  avatarUrl?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || isSuperAdmin;
 
   useEffect(() => {
     checkAuth()
@@ -95,6 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
     getUserRole: apiClient.getUserRole,
     resetPassword,
+    isSuperAdmin,
+    isAdmin,
   }
 
   return (
