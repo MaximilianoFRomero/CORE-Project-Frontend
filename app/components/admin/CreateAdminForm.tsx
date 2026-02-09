@@ -1,4 +1,3 @@
-// src/components/admin/CreateAdminForm.tsx
 'use client';
 
 import { useState } from 'react';
@@ -19,34 +18,35 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Copy, Check, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
-// ✅ CORRECCIÓN: Usar .default() correctamente y asegurar tipos
-const createAdminSchema = z.object({
+const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  role: z.enum(['admin', 'user', 'viewer']),
   password: z.string().min(8, 'Password must be at least 8 characters').optional().or(z.literal('')),
   generatePassword: z.boolean(),
   avatarUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
 });
 
-type CreateAdminFormData = z.infer<typeof createAdminSchema>;
+type CreateAdminFormData = z.infer<typeof createUserSchema>;
 
 export default function CreateAdminForm() {
   const [generatedPassword, setGeneratedPassword] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const { mutate: createAdmin, isPending } = useCreateAdminUser();
 
-  // ✅ CORRECCIÓN: Inicializar con valores explícitos
   const form = useForm<CreateAdminFormData>({
-    resolver: zodResolver(createAdminSchema),
+    resolver: zodResolver(createUserSchema),
     defaultValues: {
       email: '',
       firstName: '',
       lastName: '',
       password: '',
+      role: 'admin',
       generatePassword: false,
       avatarUrl: '',
     },
@@ -77,19 +77,17 @@ export default function CreateAdminForm() {
 
   const onSubmit = (data: CreateAdminFormData) => {
     console.log('Form data submitted:', data);
-    
-    // Preparar datos para enviar
+
     const submitData: any = {
       email: data.email,
       firstName: data.firstName,
       lastName: data.lastName,
+      role: data.role,
       avatarUrl: data.avatarUrl || undefined,
     };
 
-    // Si se generó password, añadirlo; si no, usar el password del usuario
     if (data.generatePassword) {
       submitData.generatePassword = true;
-      // El password se genera en el backend
     } else if (data.password && data.password.trim() !== '') {
       submitData.password = data.password;
     } else {
@@ -104,6 +102,7 @@ export default function CreateAdminForm() {
           firstName: '',
           lastName: '',
           password: '',
+          role: 'admin',
           generatePassword: false,
           avatarUrl: '',
         });
@@ -175,15 +174,69 @@ export default function CreateAdminForm() {
                 <FormItem>
                   <FormLabel>Email *</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="admin@company.com" 
-                      {...field} 
+                    <Input
+                      type="email"
+                      placeholder="admin@company.com"
+                      {...field}
                       disabled={isPending}
                     />
                   </FormControl>
                   <FormDescription>
                     The admin will use this email to login
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role *</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isPending}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="admin">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-primary" />
+                          <div>
+                            <p className="font-medium">Admin</p>
+                            <p className="text-xs text-muted-foreground">Full access to manage users and settings</p>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      {/*<SelectItem value="user">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-blue-500" />
+                          <div>
+                            <p className="font-medium">User</p>
+                            <p className="text-xs text-muted-foreground">Standard user with basic permissions</p>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="viewer">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-gray-500" />
+                          <div>
+                            <p className="font-medium">Viewer</p>
+                            <p className="text-xs text-muted-foreground">Read-only access</p>
+                          </div>
+                        </div>
+                      </SelectItem>*/}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the permission level for this user
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -228,10 +281,10 @@ export default function CreateAdminForm() {
                   <FormItem>
                     <FormLabel>Password *</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Enter a secure password" 
-                        {...field} 
+                      <Input
+                        type="password"
+                        placeholder="Enter a secure password"
+                        {...field}
                         disabled={isPending}
                         value={field.value || ''}
                       />
@@ -285,9 +338,9 @@ export default function CreateAdminForm() {
                 <FormItem>
                   <FormLabel>Avatar URL (Optional)</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="https://example.com/avatar.jpg" 
-                      {...field} 
+                    <Input
+                      placeholder="https://example.com/avatar.jpg"
+                      {...field}
                       disabled={isPending}
                       value={field.value || ''}
                     />
@@ -297,7 +350,6 @@ export default function CreateAdminForm() {
               )}
             />
 
-            {/* Validation summary */}
             {!generatePassword && (!currentPassword || currentPassword.trim() === '') && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                 <p className="text-sm text-yellow-800">
@@ -316,6 +368,7 @@ export default function CreateAdminForm() {
                     firstName: '',
                     lastName: '',
                     password: '',
+                    role: 'user',
                     generatePassword: false,
                     avatarUrl: '',
                   });
@@ -325,8 +378,8 @@ export default function CreateAdminForm() {
               >
                 Clear
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isPending || (!generatePassword && (!currentPassword || currentPassword.trim() === ''))}
               >
                 {isPending ? (

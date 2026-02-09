@@ -1,4 +1,3 @@
-// src/components/admin/AdminManagementSection.tsx
 'use client';
 
 import { useState } from 'react';
@@ -17,7 +16,7 @@ export default function AdminManagementSection() {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Admin Management</h2>
             <p className="text-muted-foreground">
-              Create and manage admin users with elevated permissions
+              Create and manage users with elevated permissions
             </p>
           </div>
           <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
@@ -31,11 +30,11 @@ export default function AdminManagementSection() {
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="create" className="flex items-center gap-2">
             <UserPlus className="h-4 w-4" />
-            Create Admin
+            Create User
           </TabsTrigger>
           <TabsTrigger value="manage" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Manage Admins
+            Manage Users
           </TabsTrigger>
         </TabsList>
         
