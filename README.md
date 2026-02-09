@@ -173,63 +173,87 @@ Navega a ```http://localhost:3000```
 ## 📡 Estructura de Rutas
 
 ```
-CORE-Project-Frontend/
-├── src/
-│   ├── app/
-│   │   ├── (auth)/
-│   │   │   └── login/
-│   │   │       └── page.tsx
-│   │   ├── (dashboard)/
-│   │   │   ├── layout.tsx
-│   │   │   ├── page.tsx
-│   │   │   ├── deployments/
-│   │   │   │   └── page.tsx
-│   │   │   ├── projects/
-│   │   │   │   └── page.tsx
-│   │   │   └── settings/
-│   │   │       └── page.tsx
-│   │   ├── api/
-│   │   │   └── webhooks/
-│   │   │       └── github/
-│   │   │           └── route.ts
-│   │   ├── favicon.ico
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── components/
-│   │   ├── ui/
-│   │   │   ├── button.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── label.tsx
-│   │   │   ├── skeleton.tsx
-│   │   │   └── sonner.tsx
+core-frontend/
+├── 📁 app/                          # App Router de Next.js
+│   ├── 📁 (auth)/                   # Grupo de rutas de autenticación
+│   │   └── 📁 login/
+│   │       └── page.tsx             # Página de login
+│   ├── 📁 dashboard/                # Panel principal de la aplicación
+│   │   ├── layout.tsx               # Layout del dashboard
+│   │   ├── page.tsx                 # Página principal del dashboard
+│   │   ├── 📁 projects/             # Gestión de proyectos
+│   │   │   └── page.tsx
+│   │   ├── 📁 deployments/          # Gestión de despliegues
+│   │   │   └── page.tsx
+│   │   └── 📁 settings/             # Configuración y administración
+│   │       └── page.tsx
+│   ├── 📁 components/               # Componentes específicos de app
+│   │   ├── 📁 admin/                # Componentes de administración
+│   │   │   ├── AdminManagementSection.tsx
+│   │   │   ├── AdminUsersList.tsx
+│   │   │   ├── CreateAdminForm.tsx
+│   │   │   ├── ChangeRoleModal.tsx
+│   │   │   ├── SuspendUserModal.tsx
+│   │   │   ├── DeleteUserModal.tsx
+│   │   │   └── SendResetEmailModal.tsx
 │   │   ├── dashboard-nav.tsx
-│   │   ├── metrics-chart.tsx
-│   │   ├── project-form.tsx
-│   │   ├── theme-provider.tsx
-│   │   └── theme-toggle.tsx
-│   ├── contexts/
-│   │   └── auth-context.tsx
-│   ├── hooks/
+│   │   ├── project-deploy-button.tsx
+│   │   ├── theme-toggle.tsx
+│   │   └── theme-provider.tsx
+│   ├── 📁 hooks/                    # Custom React Hooks
 │   │   ├── index.ts
 │   │   ├── useProjects.ts
-│   │   └── useDeployments.ts
-│   └── lib/
-│       ├── api-client.ts
-│       ├── utils.ts
-│       └── validations.ts
-├── public/
-│   └── next.svg
-├── .env.example
-├── .gitignore
-├── components.json
-├── next.config.js
-├── package.json
-├── postcss.config.js
-├── tailwind.config.js
-├── tsconfig.json
-└── README.md
+│   │   ├── useDeployments.ts
+│   │   └── useAdminUsers.ts
+│   ├── 📁 types/                    # Definiciones de tipos TypeScript
+│   │   └── index.ts
+│   ├── 📁 providers/                # Context Providers
+│   │   └── auth-provider.tsx
+│   ├── layout.tsx                   # Layout raíz de la aplicación
+│   ├── page.tsx                     # Página de inicio
+│   ├── providers.tsx                # Configuración de providers
+│   └── globals.css                  # Estilos globales
+├── 📁 components/                   # Componentes compartidos
+│   ├── 📁 ui/                       # Componentes UI base (shadcn/ui)
+│   │   ├── avatar.tsx
+│   │   ├── badge.tsx
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── checkbox.tsx
+│   │   ├── dialog.tsx
+│   │   ├── dropdown-menu.tsx
+│   │   ├── form.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   ├── select.tsx
+│   │   ├── separator.tsx
+│   │   ├── skeleton.tsx
+│   │   ├── switch.tsx
+│   │   ├── table.tsx
+│   │   ├── tabs.tsx
+│   │   └── textarea.tsx
+│   ├── metrics-chart.tsx
+│   └── project-form.tsx
+├── 📁 lib/                          # Utilidades y lógica de negocio
+│   ├── api-client.ts                # Cliente HTTP para API
+│   ├── utils.ts                     # Funciones utilitarias
+│   └── validations.ts               # Esquemas de validación Zod
+├── 📁 stores/                       # Estado global (Zustand)
+│   └── project-store.ts
+├── 📁 public/                       # Recursos estáticos
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── middleware.ts                    # Middleware de Next.js
+├── next.config.ts                   # Configuración de Next.js
+├── tsconfig.json                    # Configuración de TypeScript
+├── components.json                  # Configuración de shadcn/ui
+├── postcss.config.mjs               # Configuración de PostCSS
+├── package.json                     # Dependencias del proyecto
+└── .env.local                       # Variables de entorno
+
 ```
 
 ### Testing
