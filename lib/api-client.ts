@@ -1,5 +1,5 @@
 import { jwtDecode } from 'jwt-decode';
-import { CreateAdminUserDto, User , AdminUser} from '@/app/types/index';
+import { CreateAdminUserDto, User , AdminUser, UserProfile, UserRole, UserStatus} from '@/app/types/index';
 
 interface TokenPayload {
   sub: string;
@@ -31,10 +31,15 @@ export class ApiClient {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
   private refreshPromise: Promise<string> | null = null;
+  private onSessionExpiredCallback: (() => void) | null = null;
 
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
     this.initializeTokens();
+  }
+
+  onSessionExpired(callback: () => void) {
+    this.onSessionExpiredCallback = callback;
   }
 
   private initializeTokens(): void {
@@ -118,6 +123,13 @@ export class ApiClient {
     return this.refreshPromise;
   }
 
+  private triggerSessionExpired() {
+    // Solo disparar si hay callback Y el usuario estaba autenticado
+    if (this.onSessionExpiredCallback && this.accessToken) {
+      this.onSessionExpiredCallback();
+    }
+  }
+
   private async request<T = any>(
     endpoint: string,
     options: RequestInit = {},
@@ -149,6 +161,7 @@ export class ApiClient {
           if (typeof window !== 'undefined') {
             window.location.href = '/login';
           }
+          this.triggerSessionExpired();
           throw new ApiError('Session expired', 401);
         }
       }
@@ -270,6 +283,19 @@ export class ApiClient {
     }
   }
 
+  async getUser(id: string): Promise<UserProfile> {
+    return this.get<UserProfile>(`/users/${id}`);
+  }
+
+  async getUsers(filters?: { role?: string; status?: string; search?: string }): Promise<User[]> {
+    const params = new URLSearchParams();
+    if (filters?.role) params.append('role', filters.role);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.search) params.append('search', filters.search);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return this.get<User[]>(`/users${queryString}`);
+  }
+
   isAuthenticated(): boolean {
     return !!this.accessToken && !this.isTokenExpired(this.accessToken);
   }
@@ -321,6 +347,10 @@ export class ApiClient {
 
   async getUserStats(): Promise<any> {
     return this.get<any>('/users/stats/overview');
+  }
+
+  async createUser(data: any): Promise<AdminUser> {
+    return this.post<AdminUser>('/users', data);
   }
 }
 

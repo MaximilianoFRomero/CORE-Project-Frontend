@@ -19,8 +19,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Copy, Check, Shield } from 'lucide-react';
+import { Copy, Check, Shield, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCreateUser } from '@/app/hooks/useAdminUsers';
 
 const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -37,7 +38,7 @@ type CreateAdminFormData = z.infer<typeof createUserSchema>;
 export default function CreateAdminForm() {
   const [generatedPassword, setGeneratedPassword] = useState<string>('');
   const [copied, setCopied] = useState(false);
-  const { mutate: createAdmin, isPending } = useCreateAdminUser();
+  const { mutate: createUser, isPending } = useCreateUser();
 
   const form = useForm<CreateAdminFormData>({
     resolver: zodResolver(createUserSchema),
@@ -95,7 +96,7 @@ export default function CreateAdminForm() {
       return;
     }
 
-    createAdmin(submitData, {
+    createUser(submitData, {
       onSuccess: () => {
         form.reset({
           email: '',
@@ -125,12 +126,9 @@ export default function CreateAdminForm() {
     <Card>
       <CardHeader className="border-b pb-4">
         <div className="flex items-center gap-3">
-          <Shield className="h-5 w-5 text-primary" />
+          <UserPlus className="h-6 w-6 text-primary" />
           <div>
-            <CardTitle>Create Admin User</CardTitle>
-            <CardDescription>
-              Create new admin users with elevated permissions
-            </CardDescription>
+            <CardTitle>Create New User</CardTitle>
           </div>
         </div>
       </CardHeader>
@@ -215,7 +213,7 @@ export default function CreateAdminForm() {
                           </div>
                         </div>
                       </SelectItem>
-                      {/*<SelectItem value="user">
+                      <SelectItem value="user">
                         <div className="flex items-center gap-2">
                           <Shield className="h-4 w-4 text-blue-500" />
                           <div>
@@ -232,7 +230,7 @@ export default function CreateAdminForm() {
                             <p className="text-xs text-muted-foreground">Read-only access</p>
                           </div>
                         </div>
-                      </SelectItem>*/}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>

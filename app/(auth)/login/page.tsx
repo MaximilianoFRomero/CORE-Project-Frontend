@@ -10,8 +10,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import Link from 'next/link'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -24,14 +30,18 @@ export default function LoginPage() {
   const router = useRouter()
   const { login, isLoading } = useAuth()
   const [error, setError] = useState<string>('')
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   })
+
+  const passwordValue = watch('password')
 
   const onSubmit = async (data: LoginFormData) => {
     setError('')
@@ -43,6 +53,9 @@ export default function LoginPage() {
       setError(err.message || 'Login failed')
       toast.error('Login failed')
     }
+  }
+  const handleResetPassword = () => {
+    toast.info('Reset password service: coming soon')
   }
 
   return (
@@ -96,11 +109,17 @@ export default function LoginPage() {
 
             <div className="text-center text-sm">
               <span className="text-muted-foreground">You forget your password? </span>
-              <Link href="/reset-password" className="text-primary hover:underline">
+              <Button
+                type="button"
+                variant="link"
+                className="text-primary hover:underline p-0 h-auto"
+                onClick={handleResetPassword}
+              >
                 Reset password
-              </Link>
+              </Button>
             </div>
           </form>
+          
         </CardContent>
       </Card>
     </div>

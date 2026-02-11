@@ -9,15 +9,24 @@ export interface User {
   lastName: string;
   role: UserRole;
   avatarUrl?: string;
-  status?: UserStatus;           // ← Nueva propiedad
-  createdAt?: string;            // ← Nueva propiedad
-  updatedAt?: string;            // ← Nueva propiedad (opcional)
+  status?: UserStatus;      // Opcional en User base
+  createdAt?: string;       // Opcional en User base
+  updatedAt?: string;       // Opcional en User base
 }
 
 export interface AdminUser extends User {
-  status: UserStatus;            // ← Ahora es requerida para AdminUser
-  createdAt: string;             // ← Ahora es requerida para AdminUser
-  updatedAt: string;             // ← Nueva propiedad
+  status: UserStatus;       // Requerido
+  createdAt: string;        // Requerido
+  updatedAt: string;        // Requerido
+}
+
+// Perfil completo de usuario (lo que devuelve GET /users/:id)
+export interface UserProfile extends AdminUser {
+  lastLoginAt?: string | null;
+  emailVerified: boolean;
+  githubId?: string | null;
+  googleId?: string | null;
+  // Agrega aquí otras propiedades que devuelva el backend
 }
 
 export interface CreateAdminUserDto {

@@ -12,7 +12,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { AlertCircle, Trash2, Shield, User } from 'lucide-react';
-import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 
 interface DeleteUserModalProps {
@@ -34,10 +33,6 @@ export default function DeleteUserModal({
     deleteUser(user.id, {
       onSuccess: () => {
         onOpenChange(false);
-        toast.success('User deleted successfully');
-      },
-      onError: (error: any) => {
-        toast.error(error.message || 'Failed to delete user');
       },
     });
   };

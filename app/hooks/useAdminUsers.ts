@@ -1,13 +1,12 @@
-// src/hooks/useAdminUsers.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { CreateAdminUserDto, AdminUser, UserRole, UserStatus } from '@/app/types'; // ← Importar AdminUser
+import { CreateAdminUserDto, AdminUser, UserRole, UserStatus, User } from '@/app/types';
 import { toast } from 'sonner';
 
 export const useAdminUsers = () => {
   return useQuery({
     queryKey: ['admin-users'],
-    queryFn: () => apiClient.getAdminUsers() as Promise<AdminUser[]>, // ← Cast al tipo correcto
+    queryFn: () => apiClient.getAdminUsers() as Promise<AdminUser[]>,
     enabled: apiClient.isAuthenticated() && apiClient.getUserRole() === 'super_admin',
   });
 };
@@ -26,12 +25,11 @@ export const useCreateAdminUser = () => {
         ...(data.avatarUrl && { avatarUrl: data.avatarUrl }),
       };
 
-      return apiClient.createAdminUser(formattedData) as Promise<AdminUser>; // ← Cast al tipo correcto
+      return apiClient.createAdminUser(formattedData) as Promise<AdminUser>;
     },
     onSuccess: (newAdmin) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
 
-      // Actualizar cache optimísticamente
       queryClient.setQueryData(['admin-users'], (old: AdminUser[] = []) => {
         return [newAdmin, ...old];
       });
@@ -90,11 +88,10 @@ export const useToggleUserStatus = () => {
   });
 };
 
-// Hook para enviar email de reset password
 export const useSendResetEmail = () => {
   return useMutation({
     mutationFn: (email: string) =>
-      apiClient.post('/auth/forgot-password', { email }),//Esto despues lo cambiamos por el servicio de envio de correos.
+      apiClient.post('/auth/forgot-password', { email }),
     onSuccess: () => {
       toast.success('Reset password email sent');
     },
@@ -111,6 +108,7 @@ export const useDeleteUser = () => {
     mutationFn: (userId: string) => apiClient.delete(`/users/${userId}`),
     onSuccess: (_, userId) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
 
       queryClient.setQueryData(['admin-users'], (old: AdminUser[] = []) => {
         return old.filter(user => user.id !== userId);
@@ -124,11 +122,42 @@ export const useDeleteUser = () => {
   });
 };
 
-// Hook para obtener perfil completo
 export const useUserProfile = (userId?: string) => {
   return useQuery({
     queryKey: ['user-profile', userId],
-    queryFn: () => apiClient.get(`/users/${userId}`),
+    queryFn: () => apiClient.getUser(userId!), // ahora tipado a UserProfile
     enabled: !!userId,
+  });
+};
+
+export const useCreateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateAdminUserDto & { role: UserRole }) => {
+      const formattedData = {
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: data.role,
+        ...(data.password && { password: data.password }),
+        ...(data.generatePassword && { generatePassword: data.generatePassword }),
+        ...(data.avatarUrl && { avatarUrl: data.avatarUrl }),
+      };
+
+      return apiClient.createUser(formattedData) as Promise<AdminUser>;
+    },
+    onSuccess: (newUser) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.setQueryData(['admin-users'], (old: AdminUser[] = []) => {
+        return [newUser, ...old];
+      });
+
+      toast.success('User created successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to create user');
+    },
   });
 };

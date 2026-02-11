@@ -1,20 +1,37 @@
-// src/app/dashboard/settings/page.tsx
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/app/providers/auth-provider';
-import AdminManagementSection from "@/app/components/admin/AdminManagementSection";
+import UserManagementSection from "../../components/admin/ManagementSection";
 import { Shield, User, Key, Users, Mail, Calendar, Settings as SettingsIcon, Bell, Globe, Database } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, isSuperAdmin, isAdmin } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('profile');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    console.log('📌 Tab from URL:', tab);
+    if (tab && ['profile', 'team', 'notifications', 'api', 'integrations', 'database'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams.toString()]);
+
+  const handleTabChange = (value: string) => {
+    console.log('🔄 Changing tab to:', value);
+    setActiveTab(value);
+    router.push(`/dashboard/settings?tab=${value}`, { scroll: false });
+  };
 
   return (
     <div className="space-y-8">
-      {/* Header Section */}
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <SettingsIcon className="h-8 w-8 text-primary" />
@@ -25,7 +42,6 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* User Info Banner */}
       <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -62,8 +78,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Main Tabs Navigation */}
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4 lg:grid-cols-6">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -91,7 +106,6 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader>
@@ -159,10 +173,9 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Team Tab - Conditional Content */}
         <TabsContent value="team" className="space-y-6">
           {isSuperAdmin ? (
-            <AdminManagementSection />
+            <UserManagementSection />
           ) : isAdmin ? (
             <Card>
               <CardHeader>
@@ -229,7 +242,6 @@ export default function SettingsPage() {
           )}
         </TabsContent>
 
-        {/* Notifications Tab */}
         <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>
@@ -266,7 +278,6 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* API Keys Tab */}
         <TabsContent value="api" className="space-y-6">
           <Card>
             <CardHeader>
@@ -316,7 +327,6 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Other tabs can be implemented as needed */}
         <TabsContent value="integrations" className="space-y-6">
           <Card>
             <CardHeader>
