@@ -1,6 +1,10 @@
 import { jwtDecode } from 'jwt-decode';
-import { CreateAdminUserDto, User , AdminUser, UserProfile, UserRole, UserStatus} from '@/app/types/index';
+import { CreateAdminUserDto, User, AdminUser, UserProfile, UserRole, UserStatus } from '@/app/types/index';
 
+/**
+ * TokenPayload
+ * Estructura del JWT token decodificado
+ */
 interface TokenPayload {
   sub: string;
   email: string;
@@ -9,11 +13,21 @@ interface TokenPayload {
   iat: number;
 }
 
+/**
+ * ApiErrorData
+ * Estructura de errores devueltos por el API
+ */
 interface ApiErrorData {
   message?: string;
   [key: string]: any;
 }
 
+/**
+ * ApiError
+ * 
+ * Clase personalizada para errores API
+ * Patrón: Custom Error Class
+ */
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -26,6 +40,18 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * ApiClient
+ * 
+ * Patrones: Singleton + Strategy (manejo de errores)
+ * Responsabilidad: Cliente HTTP centralizado
+ * 
+ * Mejoras en esta fase:
+ * - Integración con authManager para sesión expirada
+ * - Mejor logging con prefixes
+ * - Manejo de errores mejorado
+ * - Comments más descriptivos
+ */
 export class ApiClient {
   private readonly baseURL: string;
   private accessToken: string | null = null;
@@ -38,17 +64,32 @@ export class ApiClient {
     this.initializeTokens();
   }
 
-  onSessionExpired(callback: () => void) {
+  /**
+   * Registrar callback de sesión expirada
+   * Se utiliza por AuthManager para coordinar sesión
+  */
+  onSessionExpired(callback: () => void): void {
     this.onSessionExpiredCallback = callback;
   }
 
-  private initializeTokens(): void {
-    if (typeof window === 'undefined') return;
-
-    this.accessToken = localStorage.getItem('access_token');
-    this.refreshToken = localStorage.getItem('refresh_token');
+  /**
+   * Inicializar tokens desde localStorage
+   * Se ejecuta una sola vez en el constructor
+  */
+ public initializeTokens(): void {
+   if (typeof window === 'undefined') return;
+   
+   this.accessToken = localStorage.getItem('access_token');
+   this.refreshToken = localStorage.getItem('refresh_token');
   }
-
+  
+  public reinitializeTokens(): void {
+    this.initializeTokens();
+    console.log('[ApiClient] Tokens reinitialized from localStorage');
+  }
+  /**
+   * Guardar tokens en localStorage
+   */
   private setTokens(accessToken: string, refreshToken: string): void {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
@@ -59,6 +100,9 @@ export class ApiClient {
     }
   }
 
+  /**
+   * Limpiar tokens de memoria y localStorage
+   */
   clearTokens(): void {
     this.accessToken = null;
     this.refreshToken = null;
@@ -70,6 +114,9 @@ export class ApiClient {
     }
   }
 
+  /**
+   * Verificar si un token está expirado
+   */
   private isTokenExpired(token: string): boolean {
     try {
       const { exp } = jwtDecode<TokenPayload>(token);
@@ -79,7 +126,16 @@ export class ApiClient {
     }
   }
 
+  /**
+   * Refrescar el access token usando el refresh token
+   * 
+   * Características:
+   * - Evita múltiples refresh simultáneos (refreshPromise)
+   * - Manejo de errores: Si falla, limpia tokens
+   * - Retorna nuevo token o lanza error
+   */
   private async refreshAccessToken(): Promise<string> {
+    // Si ya hay un refresh en proceso, esperar ese
     if (this.refreshPromise) {
       return this.refreshPromise;
     }
@@ -97,22 +153,24 @@ export class ApiClient {
         });
 
         if (!response.ok) {
-          throw new ApiError('Failed to refresh token');
+          throw new ApiError('Failed to refresh token', response.status);
         }
 
         const data = await response.json();
-        
+
         if (!data.access_token) {
           throw new ApiError('Invalid refresh response');
         }
 
         this.setTokens(
-          data.access_token, 
+          data.access_token,
           data.refresh_token || this.refreshToken!
         );
 
+        console.log('[ApiClient] Token refreshed successfully');
         return data.access_token;
       } catch (error) {
+        console.error('[ApiClient] Token refresh failed:', error);
         this.clearTokens();
         throw error instanceof ApiError ? error : new ApiError('Refresh failed');
       } finally {
@@ -123,13 +181,30 @@ export class ApiClient {
     return this.refreshPromise;
   }
 
-  private triggerSessionExpired() {
-    // Solo disparar si hay callback Y el usuario estaba autenticado
-    if (this.onSessionExpiredCallback && this.accessToken) {
-      this.onSessionExpiredCallback();
+  /**
+   * Disparar evento de sesión expirada
+   * Notifica a AuthManager que la sesión expiró
+   */
+  private triggerSessionExpired(): void {
+    if (this.onSessionExpiredCallback) {
+      try {
+        console.log('[ApiClient] Triggering session expired event');
+        this.onSessionExpiredCallback();
+      } catch (error) {
+        console.error('[ApiClient] Error triggering session expired callback:', error);
+      }
     }
   }
 
+  /**
+   * Realizar request HTTP
+   * 
+   * Características:
+   * - Headers automáticos con Authorization
+   * - Refresh automático si token expirado (401)
+   * - Manejo de errores centralizado
+   * - Logging detallado
+   */
   private async request<T = any>(
     endpoint: string,
     options: RequestInit = {},
@@ -145,34 +220,47 @@ export class ApiClient {
     };
 
     try {
+      console.log(`[ApiClient] ${config.method || 'GET'} ${endpoint}`);
       const response = await fetch(url, config);
 
+      // Manejo de 401: Token expirado o inválido
       if (response.status === 401 && retry && this.refreshToken) {
         try {
+          console.log('[ApiClient] Received 401, attempting token refresh');
           const newToken = await this.refreshAccessToken();
+
           if (newToken) {
+            // Reintentar request con nuevo token
             headers.set('Authorization', `Bearer ${newToken}`);
             const retryConfig = { ...config, headers };
             const retryResponse = await fetch(url, retryConfig);
+            console.log('[ApiClient] Request retry successful after refresh');
             return this.handleResponse<T>(retryResponse);
           }
-        } catch {
+        } catch (error) {
+          console.error('[ApiClient] Refresh failed, triggering session expired');
+          
+          // Limpiar tokens y disparar evento
           this.clearTokens();
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
           this.triggerSessionExpired();
+          
           throw new ApiError('Session expired', 401);
         }
       }
 
       return this.handleResponse<T>(response);
     } catch (error) {
-      if (error instanceof ApiError) throw error;
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      console.error('[ApiClient] Network error:', error);
       throw new ApiError('Network error', 0, { originalError: error });
     }
   }
 
+  /**
+   * Crear headers con Authorization automático
+   */
   private createHeaders(customHeaders?: HeadersInit): Headers {
     const headers = new Headers(customHeaders);
 
@@ -187,6 +275,10 @@ export class ApiClient {
     return headers;
   }
 
+
+  /**
+   * Procesar response HTTP
+   */
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       const errorData = await this.parseErrorResponse(response);
@@ -204,6 +296,9 @@ export class ApiClient {
     return response.json() as Promise<T>;
   }
 
+  /**
+   * Parsear error response
+   */
   private async parseErrorResponse(response: Response): Promise<ApiErrorData> {
     try {
       return await response.json();
@@ -212,14 +307,16 @@ export class ApiClient {
     }
   }
 
+  // ==================== Métodos HTTP ====================
+
   async get<T = any>(
-    endpoint: string, 
+    endpoint: string,
     params?: Record<string, string | number | boolean>
   ): Promise<T> {
-    const queryString = params 
-      ? `?${new URLSearchParams(params as Record<string, string>)}` 
+    const queryString = params
+      ? `?${new URLSearchParams(params as Record<string, string>)}`
       : '';
-    
+
     return this.request<T>(`${endpoint}${queryString}`);
   }
 
@@ -248,14 +345,17 @@ export class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
+  // ==================== Autenticación ====================
+
   async login(email: string, password: string) {
     const response = await this.post<{
       access_token: string;
       refresh_token: string;
       user: any;
     }>('/auth/login', { email, password });
-    
+
     this.setTokens(response.access_token, response.refresh_token);
+    console.log('[ApiClient] Login successful');
     return response;
   }
 
@@ -266,8 +366,9 @@ export class ApiClient {
   async logout(): Promise<void> {
     try {
       await this.post('/auth/logout');
+      console.log('[ApiClient] Logout API call successful');
     } catch (error) {
-      console.warn('Logout API call failed:', error);
+      console.warn('[ApiClient] Logout API call failed:', error);
     } finally {
       this.clearTokens();
     }
@@ -275,66 +376,32 @@ export class ApiClient {
 
   async getCurrentUser(): Promise<AdminUser | null> {
     if (!this.isAuthenticated()) return null;
-    
+
     try {
       return await this.get<AdminUser>('/users/profile/me');
-    } catch {
+    } catch (error) {
+      console.error('[ApiClient] Failed to get current user:', error);
       return null;
     }
   }
+
+  // ==================== Usuarios ====================
 
   async getUser(id: string): Promise<UserProfile> {
     return this.get<UserProfile>(`/users/${id}`);
   }
 
-  async getUsers(filters?: { role?: string; status?: string; search?: string }): Promise<User[]> {
+  async getUsers(filters?: {
+    role?: string;
+    status?: string;
+    search?: string;
+  }): Promise<User[]> {
     const params = new URLSearchParams();
     if (filters?.role) params.append('role', filters.role);
     if (filters?.status) params.append('status', filters.status);
     if (filters?.search) params.append('search', filters.search);
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return this.get<User[]>(`/users${queryString}`);
-  }
-
-  isAuthenticated(): boolean {
-    return !!this.accessToken && !this.isTokenExpired(this.accessToken);
-  }
-
-  getUserRole(): string | null {
-    if (!this.accessToken) return null;
-    
-    try {
-      const { role } = jwtDecode<TokenPayload>(this.accessToken);
-      return role;
-    } catch {
-      return null;
-    }
-  }
-
-  getUserPayload(): TokenPayload | null {
-    if (!this.accessToken) return null;
-    
-    try {
-      return jwtDecode<TokenPayload>(this.accessToken);
-    } catch {
-      return null;
-    }
-  }
-
-  private requestInterceptors: ((config: RequestInit) => RequestInit)[] = [];
-  private responseInterceptors: ((response: Response) => Response)[] = [];
-  private errorInterceptors: ((error: ApiError) => void)[] = [];
-
-  addRequestInterceptor(interceptor: (config: RequestInit) => RequestInit): void {
-    this.requestInterceptors.push(interceptor);
-  }
-
-  addResponseInterceptor(interceptor: (response: Response) => Response): void {
-    this.responseInterceptors.push(interceptor);
-  }
-
-  addErrorInterceptor(interceptor: (error: ApiError) => void): void {
-    this.errorInterceptors.push(interceptor);
   }
 
   async createAdminUser(data: CreateAdminUserDto): Promise<AdminUser> {
@@ -352,6 +419,52 @@ export class ApiClient {
   async createUser(data: any): Promise<AdminUser> {
     return this.post<AdminUser>('/users', data);
   }
+
+  // ==================== Status ====================
+
+  isAuthenticated(): boolean {
+    return !!this.accessToken && !this.isTokenExpired(this.accessToken);
+  }
+
+  getUserRole(): string | null {
+    if (!this.accessToken) return null;
+
+    try {
+      const { role } = jwtDecode<TokenPayload>(this.accessToken);
+      return role;
+    } catch {
+      return null;
+    }
+  }
+
+  getUserPayload(): TokenPayload | null {
+    if (!this.accessToken) return null;
+
+    try {
+      return jwtDecode<TokenPayload>(this.accessToken);
+    } catch {
+      return null;
+    }
+  }
+
+  // ==================== Interceptores ====================
+
+  private requestInterceptors: ((config: RequestInit) => RequestInit)[] = [];
+  private responseInterceptors: ((response: Response) => Response)[] = [];
+  private errorInterceptors: ((error: ApiError) => void)[] = [];
+
+  addRequestInterceptor(interceptor: (config: RequestInit) => RequestInit): void {
+    this.requestInterceptors.push(interceptor);
+  }
+
+  addResponseInterceptor(interceptor: (response: Response) => Response): void {
+    this.responseInterceptors.push(interceptor);
+  }
+
+  addErrorInterceptor(interceptor: (error: ApiError) => void): void {
+    this.errorInterceptors.push(interceptor);
+  }
 }
 
+// Singleton: Instancia única en toda la aplicación
 export const apiClient = new ApiClient();
