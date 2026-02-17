@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('access_token')?.value || 
                 request.headers.get('Authorization')?.replace('Bearer ', '')
 
-  const protectedPaths = ['/app/dashboard', '/app/projects', '/app/deployments', '/app/settings']
+  const protectedPaths = ['/dashboard', '/projects', '/deployments', '/settings', '/users']
   const isProtectedPath = protectedPaths.some(path => 
     request.nextUrl.pathname.startsWith(path)
   )
