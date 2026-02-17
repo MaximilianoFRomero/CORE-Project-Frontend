@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +33,7 @@ export default function SettingsPage() {
   };
 
   return (
+    <Suspense fallback={<div className="py-8 text-center">Loading settings...</div>}>
     <div className="space-y-8">
       <div className="space-y-2">
         <div className="flex items-center gap-3">
@@ -358,5 +359,6 @@ export default function SettingsPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </Suspense>
   );
 }
