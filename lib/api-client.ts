@@ -76,13 +76,13 @@ export class ApiClient {
    * Inicializar tokens desde localStorage
    * Se ejecuta una sola vez en el constructor
   */
- public initializeTokens(): void {
-   if (typeof window === 'undefined') return;
-   
-   this.accessToken = localStorage.getItem('access_token');
-   this.refreshToken = localStorage.getItem('refresh_token');
+  public initializeTokens(): void {
+    if (typeof window === 'undefined') return;
+
+    this.accessToken = localStorage.getItem('access_token');
+    this.refreshToken = localStorage.getItem('refresh_token');
   }
-  
+
   public reinitializeTokens(): void {
     this.initializeTokens();
     console.log('[ApiClient] Tokens reinitialized from localStorage');
@@ -97,6 +97,12 @@ export class ApiClient {
     if (typeof window !== 'undefined') {
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('refresh_token', refreshToken);
+
+      // Guardar en cookie para middleware
+      const d = new Date();
+      d.setTime(d.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 días (ajustar según sea necesario)
+      const expires = "expires=" + d.toUTCString();
+      document.cookie = `access_token=${accessToken};${expires};path=/;SameSite=Lax`;
     }
   }
 
@@ -111,6 +117,9 @@ export class ApiClient {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+
+      // Eliminar cookie del middleware
+      document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     }
   }
 
@@ -239,11 +248,11 @@ export class ApiClient {
           }
         } catch (error) {
           console.error('[ApiClient] Refresh failed, triggering session expired');
-          
+
           // Limpiar tokens y disparar evento
           this.clearTokens();
           this.triggerSessionExpired();
-          
+
           throw new ApiError('Session expired', 401);
         }
       }
