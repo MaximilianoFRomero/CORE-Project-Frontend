@@ -185,17 +185,21 @@ core-frontend/
 │   │   │   └── page.tsx
 │   │   ├── 📁 deployments/          # Gestión de despliegues
 │   │   │   └── page.tsx
-│   │   └── 📁 settings/             # Configuración y administración
-│   │       └── page.tsx
+│   │   ├── 📁 settings/             # Configuración y administración
+│   │   │   ├── SettingsClient.tsx
+│   │   │   └── page.tsx
+│   │   └── 📁 users/                # Rutas de usuarios
+│   │       └── 📁 [id]/             # Detalle de usuario por ID
 │   ├── 📁 components/               # Componentes específicos de app
 │   │   ├── 📁 admin/                # Componentes de administración
-│   │   │   ├── AdminManagementSection.tsx
-│   │   │   ├── AdminUsersList.tsx
-│   │   │   ├── CreateAdminForm.tsx
 │   │   │   ├── ChangeRoleModal.tsx
-│   │   │   ├── SuspendUserModal.tsx
+│   │   │   ├── CreateUserForm.tsx
 │   │   │   ├── DeleteUserModal.tsx
-│   │   │   └── SendResetEmailModal.tsx
+│   │   │   ├── ManagementSection.tsx
+│   │   │   ├── SendResetEmailModal.tsx
+│   │   │   ├── SuspendUserModal.tsx
+│   │   │   ├── UsersList.tsx
+│   │   │   └── AdminUsersList(DEPRECATED).tsx
 │   │   ├── dashboard-nav.tsx
 │   │   ├── project-deploy-button.tsx
 │   │   ├── theme-toggle.tsx
@@ -204,11 +208,14 @@ core-frontend/
 │   │   ├── index.ts
 │   │   ├── useProjects.ts
 │   │   ├── useDeployments.ts
-│   │   └── useAdminUsers.ts
+│   │   ├── useAdminUsers.ts
+│   │   ├── useSessionExpired.ts
+│   │   └── useUsers.ts
 │   ├── 📁 types/                    # Definiciones de tipos TypeScript
 │   │   └── index.ts
 │   ├── 📁 providers/                # Context Providers
-│   │   └── auth-provider.tsx
+│   │   ├── auth-provider.tsx
+│   │   └── session-listener.tsx
 │   ├── layout.tsx                   # Layout raíz de la aplicación
 │   ├── page.tsx                     # Página de inicio
 │   ├── providers.tsx                # Configuración de providers
@@ -236,6 +243,8 @@ core-frontend/
 │   └── project-form.tsx
 ├── 📁 lib/                          # Utilidades y lógica de negocio
 │   ├── api-client.ts                # Cliente HTTP para API
+│   ├── auth-manager.ts              # Gestión de sesiones
+│   ├── session-event-bus.ts         # Bus de eventos de sesión
 │   ├── utils.ts                     # Funciones utilitarias
 │   └── validations.ts               # Esquemas de validación Zod
 ├── 📁 stores/                       # Estado global (Zustand)
