@@ -19,8 +19,6 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 
-import { Checkbox } from '@/components/ui/checkbox'
-
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -38,19 +36,15 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
       password: '',
-      rememberMe: false,
+      rememberMe: false
     }
   })
-
-  const rememberMeValue = watch('rememberMe')
 
   const onSubmit = async (data: LoginFormData) => {
     setError('')
@@ -107,18 +101,13 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center space-x-2">
-              <Checkbox
+              <input
+                type="checkbox"
                 id="rememberMe"
-                checked={rememberMeValue}
-                onCheckedChange={(checked) => setValue('rememberMe', !!checked)}
-                disabled={isLoading}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                {...register('rememberMe' as any)}
               />
-              <Label
-                htmlFor="rememberMe"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-              >
-                Remember me
-              </Label>
+              <Label htmlFor="rememberMe" className="text-sm font-medium">Recordarme</Label>
             </div>
 
             {error && (

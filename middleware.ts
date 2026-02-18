@@ -2,23 +2,25 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('access_token')?.value
-  const { pathname } = request.nextUrl
+  const token = request.cookies.get('access_token')?.value ||
+    request.headers.get('Authorization')?.replace('Bearer ', '')
 
-  // Rutas públicas: /login, /register
-  if (pathname === '/login' || pathname === '/register') {
-    if (token) return NextResponse.redirect(new URL('/dashboard', request.url))
-    return NextResponse.next()
+  const protectedPaths = ['/dashboard', '/projects', '/deployments', '/settings', '/users']
+  const isProtectedPath = protectedPaths.some(path =>
+    request.nextUrl.pathname.startsWith(path)
+  )
+
+  const authPaths = ['/login', '/register']
+  const isAuthPath = authPaths.includes(request.nextUrl.pathname)
+
+  if (isProtectedPath && !token) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('from', request.nextUrl.pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
-  // Rutas protegidas: /dashboard, /projects, /deployments, /settings, /users
-  const protectedPaths = ['/dashboard', '/projects', '/deployments', '/settings', '/users']
-  const isProtected = protectedPaths.some(p => pathname.startsWith(p))
-
-  if (isProtected && !token) {
-    const url = new URL('/login', request.url)
-    url.searchParams.set('from', pathname)
-    return NextResponse.redirect(url)
+  if (isAuthPath && token) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return NextResponse.next()

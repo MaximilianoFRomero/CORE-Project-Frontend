@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Importante: Reinitializar tokens primero por si la app se reinició (F5)
    */
   useEffect(() => {
-    // Reinitializar tokens desde el almacenamiento adecuado después de SSR
+    // Reinitializar tokens desde localStorage después de SSR
     apiClient.reinitializeTokens();
 
     // Luego verificar autenticación
@@ -92,10 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userData as User);
         console.log('[AuthProvider] Auth check passed - User loaded:', userData.email);
       } else {
-        console.log('[AuthProvider] Auth check: No user data returned - Forcing logout');
-        // Si hay token pero no hay datos de usuario (ej: usuario eliminado en el backend),
-        // forzamos el cierre de sesión para limpiar los tokens locales (Session Ghosting fix)
-        await logout();
+        setUser(null);
+        console.log('[AuthProvider] Auth check: No user data returned');
       }
     } catch (error) {
       console.error('[AuthProvider] Auth check failed:', error);
@@ -109,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /**
    * Login: Autentica el usuario y carga sus datos
    */
-  const login = async (email: string, password: string, rememberMe: boolean = true) => {
+  const login = async (email: string, password: string, rememberMe = false) => {
     setIsLoading(true);
     try {
       const response = await apiClient.login(email, password, rememberMe);

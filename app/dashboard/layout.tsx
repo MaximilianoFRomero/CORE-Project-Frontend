@@ -1,8 +1,6 @@
 import DashboardNav from "../components/dashboard-nav"
 import ThemeToggle from "../components/theme-toggle"
 
-export const dynamic = 'force-dynamic';
-
 export default function DashboardLayout({
   children,
 }: Readonly<{
