@@ -73,41 +73,66 @@ export class ApiClient {
   }
 
   /**
-   * Inicializar tokens desde localStorage
-   * Se ejecuta una sola vez en el constructor
+   * Inicializar tokens desde almacenamiento (localStorage o sessionStorage)
+   * Se ejecuta una sola vez en el constructor y cuando sea necesario reincializar
   */
   public initializeTokens(): void {
     if (typeof window === 'undefined') return;
 
+    // Intentar obtener de localStorage (Sesión persistente)
     this.accessToken = localStorage.getItem('access_token');
     this.refreshToken = localStorage.getItem('refresh_token');
+
+    // Si no está en localStorage, intentar sessionStorage (Sesión temporal)
+    if (!this.accessToken) {
+      this.accessToken = sessionStorage.getItem('access_token');
+      this.refreshToken = sessionStorage.getItem('refresh_token');
+    }
   }
 
   public reinitializeTokens(): void {
     this.initializeTokens();
-    console.log('[ApiClient] Tokens reinitialized from localStorage');
+    console.log('[ApiClient] Tokens reinitialized from storage');
   }
+
   /**
-   * Guardar tokens en localStorage
+   * Guardar tokens en el almacenamiento adecuado
+   * @param accessToken Token de acceso
+   * @param refreshToken Token de refresco
+   * @param rememberMe Si es true, usa localStorage. Si es false, usa sessionStorage.
    */
-  private setTokens(accessToken: string, refreshToken: string): void {
+  private setTokens(accessToken: string, refreshToken: string, rememberMe: boolean = true): void {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
 
     if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('refresh_token', refreshToken);
+      const storage = rememberMe ? localStorage : sessionStorage;
+
+      // Limpiar el otro almacenamiento para evitar conflictos
+      const otherStorage = rememberMe ? sessionStorage : localStorage;
+      otherStorage.removeItem('access_token');
+      otherStorage.removeItem('refresh_token');
+
+      // Guardar en el almacenamiento seleccionado
+      storage.setItem('access_token', accessToken);
+      storage.setItem('refresh_token', refreshToken);
 
       // Guardar en cookie para middleware
-      const d = new Date();
-      d.setTime(d.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 días (ajustar según sea necesario)
-      const expires = "expires=" + d.toUTCString();
-      document.cookie = `access_token=${accessToken};${expires};path=/;SameSite=Lax`;
+      // Si rememberMe es false, la cookie no tiene expiración (cookie de sesión)
+      let cookieString = `access_token=${accessToken};path=/;SameSite=Lax`;
+
+      if (rememberMe) {
+        const d = new Date();
+        d.setTime(d.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 días
+        cookieString += `;expires=${d.toUTCString()}`;
+      }
+
+      document.cookie = cookieString;
     }
   }
 
   /**
-   * Limpiar tokens de memoria y localStorage
+   * Limpiar tokens de memoria y almacenamiento
    */
   clearTokens(): void {
     this.accessToken = null;
@@ -117,6 +142,8 @@ export class ApiClient {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('refresh_token');
 
       // Eliminar cookie del middleware
       document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -226,6 +253,7 @@ export class ApiClient {
       ...options,
       headers,
       credentials: 'include',
+      cache: 'no-store', // Desactivar caché de Next.js/Vercel
     };
 
     try {
@@ -356,15 +384,15 @@ export class ApiClient {
 
   // ==================== Autenticación ====================
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string, rememberMe: boolean = true) {
     const response = await this.post<{
       access_token: string;
       refresh_token: string;
       user: any;
-    }>('/auth/login', { email, password });
+    }>('/auth/login', { email, password, rememberMe });
 
-    this.setTokens(response.access_token, response.refresh_token);
-    console.log('[ApiClient] Login successful');
+    this.setTokens(response.access_token, response.refresh_token, rememberMe);
+    console.log('[ApiClient] Login successful (rememberMe:', rememberMe, ')');
     return response;
   }
 

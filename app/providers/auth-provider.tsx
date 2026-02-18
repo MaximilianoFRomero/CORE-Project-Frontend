@@ -18,7 +18,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -46,9 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Importante: Reinitializar tokens primero por si la app se reinició (F5)
    */
   useEffect(() => {
-    // Reinitializar tokens desde localStorage después de SSR
+    // Reinitializar tokens desde el almacenamiento adecuado después de SSR
     apiClient.reinitializeTokens();
-    
+
     // Luego verificar autenticación
     checkAuth();
   }, []);
@@ -87,13 +87,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Intentar obtener usuario actual
       console.log('[AuthProvider] Checking authentication...');
       const userData = await apiClient.getCurrentUser();
-      
+
       if (userData) {
         setUser(userData as User);
         console.log('[AuthProvider] Auth check passed - User loaded:', userData.email);
       } else {
-        setUser(null);
-        console.log('[AuthProvider] Auth check: No user data returned');
+        console.log('[AuthProvider] Auth check: No user data returned - Forcing logout');
+        // Si hay token pero no hay datos de usuario (ej: usuario eliminado en el backend),
+        // forzamos el cierre de sesión para limpiar los tokens locales (Session Ghosting fix)
+        await logout();
       }
     } catch (error) {
       console.error('[AuthProvider] Auth check failed:', error);
@@ -107,10 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /**
    * Login: Autentica el usuario y carga sus datos
    */
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, rememberMe: boolean = true) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.login(email, password);
+      const response = await apiClient.login(email, password, rememberMe);
       setUser(response.user);
       console.log('[AuthProvider] Login successful:', response.user.email);
     } catch (error) {
@@ -147,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiClient.logout();
       setUser(null);
       console.log('[AuthProvider] Logout successful');
-      
+
       // Redirigir a login
       router.push('/login');
     } catch (error) {
