@@ -5,6 +5,14 @@ import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { authManager } from '@/lib/auth-manager';
 import { UserRole } from '@/app/types/index';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface User {
   id: string;
@@ -34,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSessionExpiredDialog, setShowSessionExpiredDialog] = useState(false);
 
   // Propiedades derivadas
   const isSuperAdmin = user?.role === 'super_admin';
@@ -61,7 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = authManager.onSessionExpired(() => {
       // Limpiar estado local cuando la sesión expira
       setUser(null);
-      console.log('[AuthProvider] Session expired - User cleared');
+      setShowSessionExpiredDialog(true);
+      console.log('[AuthProvider] Session expired - User cleared and notification shown');
     });
 
     // Cleanup: Desuscribirse cuando el componente se desmonte
@@ -176,6 +186,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /**
+   * Maneja el cierre del diálogo de sesión expirada
+   */
+  const handleCloseSessionExpiredDialog = () => {
+    setShowSessionExpiredDialog(false);
+    router.push('/login');
+  };
+
   // Contexto value
   const value: AuthContextType = {
     user,
@@ -193,6 +211,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={value}>
       {children}
+
+      <Dialog open={showSessionExpiredDialog} onOpenChange={handleCloseSessionExpiredDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sesión expirada</DialogTitle>
+            <DialogDescription>
+              Su sesión ha expirado por inactividad o seguridad. Por favor, vuelva a iniciar sesión para continuar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end pt-4">
+            <Button onClick={handleCloseSessionExpiredDialog}>Aceptar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AuthContext.Provider>
   );
 }
