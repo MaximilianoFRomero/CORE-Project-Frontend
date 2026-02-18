@@ -19,9 +19,12 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 
+import { Checkbox } from '@/components/ui/checkbox'
+
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  rememberMe: z.boolean(),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
@@ -35,18 +38,24 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      rememberMe: false,
+    }
   })
 
-  const passwordValue = watch('password')
+  const rememberMeValue = watch('rememberMe')
 
   const onSubmit = async (data: LoginFormData) => {
     setError('')
     try {
-      await login(data.email, data.password)
+      await login(data.email, data.password, data.rememberMe)
       toast.success('Logged in successfully')
       router.push('/dashboard')
     } catch (err: any) {
@@ -97,6 +106,21 @@ export default function LoginPage() {
               )}
             </div>
 
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="rememberMe"
+                checked={rememberMeValue}
+                onCheckedChange={(checked) => setValue('rememberMe', !!checked)}
+                disabled={isLoading}
+              />
+              <Label
+                htmlFor="rememberMe"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Remember me
+              </Label>
+            </div>
+
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-600">{error}</p>
@@ -119,7 +143,7 @@ export default function LoginPage() {
               </Button>
             </div>
           </form>
-          
+
         </CardContent>
       </Card>
     </div>
