@@ -73,17 +73,17 @@ export class ApiClient {
   }
 
   /**
-   * Inicializar tokens desde almacenamiento (localStorage o sessionStorage)
-   * Se ejecuta una sola vez en el constructor y cuando sea necesario reincializar
+   * Inicializar tokens desde localStorage o sessionStorage
+   * Se ejecuta una sola vez en el constructor
   */
   public initializeTokens(): void {
     if (typeof window === 'undefined') return;
 
-    // Intentar obtener de localStorage (Sesión persistente)
+    // Intentar primero con localStorage (persistente)
     this.accessToken = localStorage.getItem('access_token');
     this.refreshToken = localStorage.getItem('refresh_token');
 
-    // Si no está en localStorage, intentar sessionStorage (Sesión temporal)
+    // Si no está en localStorage, buscar en sessionStorage (sesión actual)
     if (!this.accessToken) {
       this.accessToken = sessionStorage.getItem('access_token');
       this.refreshToken = sessionStorage.getItem('refresh_token');
@@ -94,34 +94,28 @@ export class ApiClient {
     this.initializeTokens();
     console.log('[ApiClient] Tokens reinitialized from storage');
   }
-
   /**
    * Guardar tokens en el almacenamiento adecuado
-   * @param accessToken Token de acceso
-   * @param refreshToken Token de refresco
-   * @param rememberMe Si es true, usa localStorage. Si es false, usa sessionStorage.
    */
-  private setTokens(accessToken: string, refreshToken: string, rememberMe: boolean = true): void {
+  private setTokens(accessToken: string, refreshToken: string, isPersistent = false): void {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
 
     if (typeof window !== 'undefined') {
-      const storage = rememberMe ? localStorage : sessionStorage;
+      const storage = isPersistent ? localStorage : sessionStorage;
 
-      // Limpiar el otro almacenamiento para evitar conflictos
-      const otherStorage = rememberMe ? sessionStorage : localStorage;
+      // Limpiar el otro storage para evitar inconsistencias
+      const otherStorage = isPersistent ? sessionStorage : localStorage;
       otherStorage.removeItem('access_token');
       otherStorage.removeItem('refresh_token');
 
-      // Guardar en el almacenamiento seleccionado
       storage.setItem('access_token', accessToken);
       storage.setItem('refresh_token', refreshToken);
 
       // Guardar en cookie para middleware
-      // Si rememberMe es false, la cookie no tiene expiración (cookie de sesión)
       let cookieString = `access_token=${accessToken};path=/;SameSite=Lax`;
 
-      if (rememberMe) {
+      if (isPersistent) {
         const d = new Date();
         d.setTime(d.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 días
         cookieString += `;expires=${d.toUTCString()}`;
@@ -132,7 +126,7 @@ export class ApiClient {
   }
 
   /**
-   * Limpiar tokens de memoria y almacenamiento
+   * Limpiar tokens de memoria y persistencia
    */
   clearTokens(): void {
     this.accessToken = null;
@@ -253,7 +247,7 @@ export class ApiClient {
       ...options,
       headers,
       credentials: 'include',
-      cache: 'no-store', // Desactivar caché de Next.js/Vercel
+      cache: 'no-store', // Desactivar cache de Next.js/Vercel para evitar fugas de sesión
     };
 
     try {
@@ -384,15 +378,15 @@ export class ApiClient {
 
   // ==================== Autenticación ====================
 
-  async login(email: string, password: string, rememberMe: boolean = true) {
+  async login(email: string, password: string, rememberMe = false) {
     const response = await this.post<{
       access_token: string;
       refresh_token: string;
       user: any;
-    }>('/auth/login', { email, password, rememberMe });
+    }>('/auth/login', { email, password });
 
     this.setTokens(response.access_token, response.refresh_token, rememberMe);
-    console.log('[ApiClient] Login successful (rememberMe:', rememberMe, ')');
+    console.log('[ApiClient] Login successful (RememberMe:', rememberMe, ')');
     return response;
   }
 
