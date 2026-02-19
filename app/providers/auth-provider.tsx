@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 import { authManager } from '@/lib/auth-manager';
 import { UserRole } from '@/app/types/index';
@@ -44,49 +45,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [showSessionExpiredDialog, setShowSessionExpiredDialog] = useState(false);
 
-  // Propiedades derivadas
   const isSuperAdmin = user?.role === 'super_admin';
   const isAdmin = user?.role === 'admin' || isSuperAdmin;
 
-  /**
-   * Efecto 1: Verificar autenticación al montar
-   * Se ejecuta una sola vez
-   * 
-   * Importante: Reinitializar tokens primero por si la app se reinició (F5)
-   */
   useEffect(() => {
-    // Reinitializar tokens desde localStorage después de SSR
     apiClient.reinitializeTokens();
 
-    // Luego verificar autenticación
     checkAuth();
   }, []);
 
-  /**
-   * Efecto 2: Escuchar eventos de sesión expirada
-   * Cuando la sesión expira, limpia el user local
-   */
   useEffect(() => {
     const unsubscribe = authManager.onSessionExpired(() => {
-      // Limpiar estado local cuando la sesión expira
       setUser(null);
       setShowSessionExpiredDialog(true);
       console.log('[AuthProvider] Session expired - User cleared and notification shown');
     });
 
-    // Cleanup: Desuscribirse cuando el componente se desmonte
     return () => {
       unsubscribe();
     };
   }, []);
 
-  /**
-   * Verifica si el usuario está autenticado
-   * Si está autenticado, obtiene los datos del usuario
-   */
+  const handleSessionLost = useCallback(() => {
+    if (!user) return;
+    
+    toast.error('Session lost, please login again');
+    setUser(null);
+    apiClient.clearTokens();
+    router.push('/login');
+  }, [user, router]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        if (!apiClient.isAuthenticated()) {
+          console.log('[AuthProvider] Session lost on visibility change');
+          handleSessionLost();
+        }
+      }
+    };
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible' && user) {
+        if (!apiClient.isAuthenticated()) {
+          console.log('[AuthProvider] Session lost on interval check');
+          handleSessionLost();
+        }
+      }
+    }, 60000);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(intervalId);
+    };
+  }, [user, handleSessionLost]);
+
   const checkAuth = async () => {
     try {
-      // Verificar si tenemos token válido
       if (!apiClient.isAuthenticated()) {
         console.log('[AuthProvider] No valid token found');
         setUser(null);
@@ -94,7 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Intentar obtener usuario actual
       console.log('[AuthProvider] Checking authentication...');
       const userData = await apiClient.getCurrentUser();
 
@@ -108,15 +124,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('[AuthProvider] Auth check failed:', error);
       setUser(null);
-      // No limpiar tokens aquí - dejar que sea manejado por AuthManager
     } finally {
       setIsLoading(false);
     }
   };
 
-  /**
-   * Login: Autentica el usuario y carga sus datos
-   */
   const login = async (email: string, password: string, rememberMe = false) => {
     setIsLoading(true);
     try {
@@ -132,9 +144,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * Register: Registra un nuevo usuario
-   */
   const register = async (userData: any) => {
     setIsLoading(true);
     try {
@@ -148,9 +157,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * Logout: Cierra la sesión del usuario
-   */
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -158,11 +164,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       console.log('[AuthProvider] Logout successful');
 
-      // Redirigir a login
       router.push('/login');
     } catch (error) {
       console.error('[AuthProvider] Logout error:', error);
-      // Aún así, limpiar estado local y redirigir
       setUser(null);
       router.push('/login');
     } finally {
@@ -170,9 +174,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * Reset Password: Envía email de reset
-   */
   const resetPassword = async (email: string) => {
     setIsLoading(true);
     try {
@@ -186,15 +187,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * Maneja el cierre del diálogo de sesión expirada
-   */
   const handleCloseSessionExpiredDialog = () => {
     setShowSessionExpiredDialog(false);
     router.push('/login');
   };
 
-  // Contexto value
   const value: AuthContextType = {
     user,
     isLoading,
@@ -229,9 +226,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * Hook para acceder al contexto de autenticación
- */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
